@@ -4,10 +4,11 @@
 #
 #
 
-import dbus
-import dbus.service
-import dbus.mainloop.glib
 import time
+
+import dbus
+import dbus.mainloop.glib
+import dbus.service
 import evdev  # used to get input from the mouse
 from evdev import InputDevice, ecodes
 
@@ -20,7 +21,9 @@ class Mouse:
         self.state = [
             0xA1,  # this is an input report
             0x02,  # Usage report = Mouse
-            0x00,  # Bit array for Buttons ( Bits 0...4 : Buttons 1...5, Bits 5...7 : Unused )
+            0x00,
+            # Bit array for Buttons
+            #   ( Bits 0...4 : Buttons 1...5, Bits 5...7 : Unused )
             0x00,  # Rel X
             0x00,  # Rel Y
             0x00,  # Mouse Wheel
@@ -29,8 +32,11 @@ class Mouse:
         print("Setting up DBus Client")
 
         self.bus = dbus.SystemBus()
-        self.bluetoothservice = self.bus.get_object('org.upwork.HidBluetoothService', "/org/upwork/HidBluetoothService")
-        self.iface = dbus.Interface(self.bluetoothservice, 'org.upwork.HidBluetoothService')
+        self.bluetoothservice = self.bus.get_object(
+            'org.upwork.HidBluetoothService',
+            "/org/upwork/HidBluetoothService")
+        self.iface = dbus.Interface(self.bluetoothservice,
+                                    'org.upwork.HidBluetoothService')
 
         print("Waiting for mouse")
 
@@ -41,8 +47,10 @@ class Mouse:
 
         while have_dev is False and count < NUMBER_OF_TRIES:
             try:
-                # try and get a mouse - loop through all devices and try to find a mouse
-                devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
+                # try and get a mouse
+                #   - loop through all devices and try to find a mouse
+                devices = [evdev.InputDevice(fn) for fn in
+                           evdev.list_devices()]
                 for device in reversed(devices):
                     if "mouse" in device.name.lower():
                         print("Found a keyboard with the keyword 'mouse'")
@@ -54,7 +62,7 @@ class Mouse:
                 print("Mouse not found, waiting 3 seconds and retrying")
                 time.sleep(3)
             count += 1
-        
+
         if not have_dev:
             print("Mouse not found after " + str(NUMBER_OF_TRIES) + " tries.")
             return
@@ -103,7 +111,6 @@ class Mouse:
     # forward mouse events to the dbus service
     def send_input(self):
         self.iface.send_mouse(self.state[2], self.state[3:6])
-
 
 
 if __name__ == "__main__":

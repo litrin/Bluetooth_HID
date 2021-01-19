@@ -6,13 +6,16 @@
 #		   and http://yetanotherpointlesstechblog.blogspot.de/2016/04/emulating-bluetooth-keyboard-with.html
 #
 
-import dbus
-import dbus.service
-import dbus.mainloop.glib
 import time
+
+import dbus
+import dbus.mainloop.glib
+import dbus.service
 import evdev  # used to get input from the keyboard
 from evdev import InputDevice, ecodes
-import keymap  # used to map evdev input to hide key codes
+
+import keyboard.keymap as keymap  # used to map evdev input to hide key codes
+
 
 # Define a client to listen to local key events
 class Keyboard:

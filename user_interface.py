@@ -1,21 +1,18 @@
-from Tkinter import *
-import os
-import sys
-import dbus
-import dbus.service
-import dbus.mainloop.glib
-from bluetooth import *
-import xml.etree.ElementTree as ET
-
-import gtk
-from dbus.mainloop.glib import DBusGMainLoop
-from Queue import Empty
-
-import subprocess
 import multiprocessing
+import subprocess
+import xml.etree.ElementTree as ET
+from tkinter import *
+
+import dbus
+import dbus.mainloop.glib
+import dbus.service
+from bluetooth import *
+# import gtk
+from dbus.mainloop.glib import DBusGMainLoop
 
 from keyboard.keyboard_client import Keyboard
 from mouse.mouse_client import Mouse
+
 
 #####################################################################################################
 
@@ -36,7 +33,8 @@ class BluetoothBluezProfile(dbus.service.Object):
     def Cancel(self):
         print("Cancel")
 
-    @dbus.service.method("org.bluez.Profile1", in_signature="oha{sv}", out_signature="")
+    @dbus.service.method("org.bluez.Profile1", in_signature="oha{sv}",
+                         out_signature="")
     def NewConnection(self, path, fd, properties):
         self.fd = fd.take()
         print("NewConnection(%s, %d)" % (path, self.fd))
@@ -46,7 +44,8 @@ class BluetoothBluezProfile(dbus.service.Object):
             else:
                 print("  %s = %s" % (key, properties[key]))
 
-    @dbus.service.method("org.bluez.Profile1", in_signature="o", out_signature="")
+    @dbus.service.method("org.bluez.Profile1", in_signature="o",
+                         out_signature="")
     def RequestDisconnection(self, path):
         print("RequestDisconnection(%s)" % (path))
 
@@ -68,10 +67,15 @@ class BluetoothDevice():
     MY_DEV_NAME = "Bluetooth_Keyboard/Mouse"
 
     # define some constants
-    P_CTRL = 17  # Service port - must match port configured in SDP record
-    P_INTR = 19  # Service port - must match port configured in SDP record #Interrrupt port
-    PROFILE_DBUS_PATH = "/bluez/upwork/hidbluetooth_profile"  # dbus path of  the bluez profile we will create
-    SDP_RECORD_PATH = sys.path[0] + "/sdp_record.xml"  # file path of the sdp record to load
+    # Service port - must match port configured in SDP record
+    P_CTRL = 17
+    # Service port - must match port configured in SDP record #Interrrupt port
+    P_INTR = 19
+    # dbus path of  the bluez profile we will create
+    PROFILE_DBUS_PATH = "/bluez/upwork/hidbluetooth_profile"
+
+    # file path of the sdp record to load
+    SDP_RECORD_PATH = sys.path[0] + "/sdp_record.xml"
     UUID = "00001124-0000-1000-8000-00805f9b34fb"
 
     def __init__(self):
@@ -87,14 +91,18 @@ class BluetoothDevice():
         print("Configuring for name " + BluetoothDevice.MY_DEV_NAME)
 
         # set the device class to a keybord/mouse combo and set the name
-        # os.system("sudo hciconfig hcio class 0x25C0") # Keyboard/Mouse Combo in Limited Discoverable Mode
-        os.system("sudo hciconfig hcio class 0x05C0")  # Keyboard/Mouse Combo in General Discoverable Mode
+        # os.system("sudo hciconfig hcio class 0x25C0")
+        # Keyboard/Mouse Combo in Limited Discoverable Mode
+        os.system(
+            "sudo hciconfig hcio class 0x05C0")
+        # Keyboard/Mouse Combo in General Discoverable Mode
         os.system("sudo hciconfig hcio name " + BluetoothDevice.MY_DEV_NAME)
 
         # make the device discoverable
         os.system("sudo hciconfig hcio piscan")
 
-    # set up a bluez profile to advertise device capabilities from a loaded service record
+    # set up a bluez profile to advertise device
+    #   capabilities from a loaded service record
     def init_bluez_profile(self):
 
         print("Configuring Bluez Profile")
@@ -118,11 +126,13 @@ class BluetoothDevice():
 
         # retrieve a proxy for the bluez profile interface
         bus = dbus.SystemBus()
-        manager = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
+        manager = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"),
+                                 "org.bluez.ProfileManager1")
 
         profile = BluetoothBluezProfile(bus, BluetoothDevice.PROFILE_DBUS_PATH)
 
-        manager.RegisterProfile(BluetoothDevice.PROFILE_DBUS_PATH, BluetoothDevice.UUID, opts)
+        manager.RegisterProfile(BluetoothDevice.PROFILE_DBUS_PATH,
+                                BluetoothDevice.UUID, opts)
 
         print("Profile registered ")
 
@@ -177,8 +187,10 @@ class BluetoothService(dbus.service.Object):
         print("Setting up service")
 
         # set up as a dbus service
-        bus_name = dbus.service.BusName("org.upwork.HidBluetoothService", bus=dbus.SystemBus())
-        dbus.service.Object.__init__(self, bus_name, "/org/upwork/HidBluetoothService")
+        bus_name = dbus.service.BusName("org.upwork.HidBluetoothService",
+                                        bus=dbus.SystemBus())
+        dbus.service.Object.__init__(self, bus_name,
+                                     "/org/upwork/HidBluetoothService")
 
         # create and setup our device
         self.device = BluetoothDevice()
@@ -216,9 +228,12 @@ class BluetoothService(dbus.service.Object):
 
         self.device.send_string(cmd_str)
 
-    @dbus.service.method('org.freedesktop.DBus.Introspectable', out_signature='s')
+    @dbus.service.method('org.freedesktop.DBus.Introspectable',
+                         out_signature='s')
     def Introspect(self):
-        return ET.tostring(ET.parse(os.getcwd() + '/org.upwork.hidbluetooth.introspection').getroot(), encoding='utf8',
+        return ET.tostring(ET.parse(
+            os.getcwd() + '/org.upwork.hidbluetooth.introspection').getroot(),
+                           encoding='utf8',
                            method='xml')
 
     def close(self):
@@ -226,9 +241,6 @@ class BluetoothService(dbus.service.Object):
             self.device.close()
         except:
             pass
-
-
-#####################################################################################################
 
 
 class App(Frame):
@@ -248,11 +260,15 @@ class App(Frame):
 
         self.radio_buttons = []
 
-        for i in xrange(4):
+        for i in range(4):
             self.radio_buttons.append(
-                Radiobutton(self.buttons_frame, variable=self.buttons_variable, activebackground="green", bg="white",
-                            selectcolor="green", relief="sunken", command=self.change_screen, value=i, indicatoron=0))
-            self.radio_buttons[i].pack(fill=X, expand=True, side=LEFT, padx=10, pady=10)
+                Radiobutton(self.buttons_frame, variable=self.buttons_variable,
+                            activebackground="green", bg="white",
+                            selectcolor="green", relief="sunken",
+                            command=self.change_screen, value=i,
+                            indicatoron=0))
+            self.radio_buttons[i].pack(fill=X, expand=True, side=LEFT, padx=10,
+                                       pady=10)
 
         self.inner_frame = Frame(self, bg=background)
         self.inner_frame.pack(side="top", fill=X, expand=True)
@@ -275,7 +291,7 @@ class App(Frame):
             self.pageTwo.tkraise()
 
 
-#############################################################################################################
+###############################################################################
 
 
 class BluetoothStatusLabel(Label):
@@ -284,7 +300,8 @@ class BluetoothStatusLabel(Label):
         self.update_text()
 
     def update_text(self):
-        if "UP" in subprocess.check_output("hciconfig hci0 | grep UP", shell=True):
+        if "UP" in subprocess.check_output("hciconfig hci0 | grep UP",
+                                           shell=True):
             self.configure(bg="green", text="Enabled")
         else:
             self.configure(bg="red", text="Disabled")
@@ -298,11 +315,10 @@ class ConnectionStatusLabel(Label):
         self.update_text()
 
     def update_text(self):
-        try:
-            global connection_status_queue
+        global connection_status_queue
+        if not connection_status_queue.empty():
             self.text = connection_status_queue.get(True, 0.1)
-        except Empty:
-            pass
+
         self.configure(text=self.text)
         if self.text == "Connected":
             self.configure(bg="green", text="Connected")
@@ -324,7 +340,8 @@ class PageOne(Frame):
         self.frame1 = Frame(self, bg=background)
         self.frame1.pack(side="top", fill="both", expand=True)
 
-        Label(self.frame1, text="Bluetooth Status: ", bg=background).pack(side=LEFT, padx=(10, 20), pady=10)
+        Label(self.frame1, text="Bluetooth Status: ", bg=background).pack(
+            side=LEFT, padx=(10, 20), pady=10)
 
         BluetoothStatusLabel(self.frame1, bg="red").pack(fill=X,
                                                          expand=True,
@@ -335,7 +352,8 @@ class PageOne(Frame):
         self.frame2 = Frame(self, bg=background)
         self.frame2.pack(side="top", fill="both", expand=True)
 
-        Label(self.frame2, text="Connection Status: ", bg=background).pack(side=LEFT, padx=10, pady=10)
+        Label(self.frame2, text="Connection Status: ", bg=background).pack(
+            side=LEFT, padx=10, pady=10)
 
         ConnectionStatusLabel(self.frame2, bg="red").pack(fill=X,
                                                           expand=True,
@@ -344,7 +362,7 @@ class PageOne(Frame):
                                                           pady=10)
 
 
-##########################################################################################################################
+###############################################################################
 
 
 class PageTwo(Frame):
@@ -358,14 +376,20 @@ class PageTwo(Frame):
 
         for i in xrange(3):
             for j in xrange(3):
-                self.buttons.append(Button(self.container, text=str(i * 3 + j + 1)))
-                self.buttons[i * 3 + j].bind("<ButtonPress-1>", self.on_press(i, j))
-                self.buttons[i * 3 + j].bind("<ButtonRelease-1>", self.on_release)
+                self.buttons.append(
+                    Button(self.container, text=str(i * 3 + j + 1)))
+                self.buttons[i * 3 + j].bind("<ButtonPress-1>",
+                                             self.on_press(i, j))
+                self.buttons[i * 3 + j].bind("<ButtonRelease-1>",
+                                             self.on_release)
                 self.buttons[i * 3 + j].grid(row=i, column=j, padx=20, pady=20)
 
         self.bus = dbus.SystemBus()
-        self.bluetoothservice = self.bus.get_object('org.upwork.HidBluetoothService', "/org/upwork/HidBluetoothService")
-        self.iface = dbus.Interface(self.bluetoothservice, 'org.upwork.HidBluetoothService')
+        self.bluetoothservice = self.bus.get_object(
+            'org.upwork.HidBluetoothService',
+            "/org/upwork/HidBluetoothService")
+        self.iface = dbus.Interface(self.bluetoothservice,
+                                    'org.upwork.HidBluetoothService')
 
     def on_press(self, row, column):
         button_id = row * 3 + column + 1
@@ -373,7 +397,9 @@ class PageTwo(Frame):
 
         def sender(event):
             print("button " + str(button_id) + " was pressed")
-            self.iface.send_keys(0x00, [button_id + shift, 0x00, 0x00, 0x00, 0x00, 0x00])
+            self.iface.send_keys(0x00,
+                                 [button_id + shift, 0x00, 0x00, 0x00, 0x00,
+                                  0x00])
 
         return sender
 
@@ -386,17 +412,20 @@ def create_bluetooth_server_process():
     try:
         DBusGMainLoop(set_as_default=True)
         BluetoothService()
-        gtk.main()
+        # gtk.main()
     finally:
         return
+
 
 if __name__ == "__main__":
     # Variable used to update the user interface's Connection Status Label
     connection_status_queue = multiprocessing.Manager().Queue()
     connection_status_queue.put("Disconnected")
 
-    # Bluetooth DBus Service that will receive inputs from Keyboard and Mouse and send them via Bluetooth
-    bluetoothProcess = multiprocessing.Process(target=create_bluetooth_server_process)
+    # Bluetooth DBus Service that will receive inputs from
+    #   Keyboard and Mouse and send them via Bluetooth
+    bluetoothProcess = multiprocessing.Process(
+        target=create_bluetooth_server_process)
     bluetoothProcess.start()
 
     # Keyboard process

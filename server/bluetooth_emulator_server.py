@@ -6,17 +6,14 @@
 #		   and http://yetanotherpointlesstechblog.blogspot.de/2016/04/emulating-bluetooth-keyboard-with.html
 #
 
-import os
-import sys
-import argparse
-import dbus
-import dbus.service
-import dbus.mainloop.glib
-from bluetooth import *
 import xml.etree.ElementTree as ET
 
-import gtk
+import dbus
+import dbus.mainloop.glib
+import dbus.service
+from bluetooth import *
 from dbus.mainloop.glib import DBusGMainLoop
+
 
 #
 # define a bluez 5 profile object for our keyboard/mouse
@@ -35,7 +32,8 @@ class BluetoothBluezProfile(dbus.service.Object):
     def Cancel(self):
         print("Cancel")
 
-    @dbus.service.method("org.bluez.Profile1", in_signature="oha{sv}", out_signature="")
+    @dbus.service.method("org.bluez.Profile1", in_signature="oha{sv}",
+                         out_signature="")
     def NewConnection(self, path, fd, properties):
         self.fd = fd.take()
         print("NewConnection(%s, %d)" % (path, self.fd))
@@ -45,7 +43,8 @@ class BluetoothBluezProfile(dbus.service.Object):
             else:
                 print("  %s = %s" % (key, properties[key]))
 
-    @dbus.service.method("org.bluez.Profile1", in_signature="o", out_signature="")
+    @dbus.service.method("org.bluez.Profile1", in_signature="o",
+                         out_signature="")
     def RequestDisconnection(self, path):
         print("RequestDisconnection(%s)" % (path))
 
@@ -70,7 +69,8 @@ class BluetoothDevice():
     P_CTRL = 17  # Service port - must match port configured in SDP record
     P_INTR = 19  # Service port - must match port configured in SDP record #Interrrupt port
     PROFILE_DBUS_PATH = "/bluez/upwork/hidbluetooth_profile"  # dbus path of  the bluez profile we will create
-    SDP_RECORD_PATH = sys.path[0] + "/sdp_record.xml"  # file path of the sdp record to load
+    SDP_RECORD_PATH = sys.path[
+                          0] + "/sdp_record.xml"  # file path of the sdp record to load
     UUID = "00001124-0000-1000-8000-00805f9b34fb"
 
     def __init__(self, queue):
@@ -88,8 +88,9 @@ class BluetoothDevice():
         print("Configuring for name " + BluetoothDevice.MY_DEV_NAME)
 
         # set the device class to a keybord/mouse combo and set the name
-        #os.system("sudo hciconfig hcio class 0x25C0") # Keyboard/Mouse Combo in Limited Discoverable Mode
-        os.system("sudo hciconfig hcio class 0x05C0")  # Keyboard/Mouse Combo in General Discoverable Mode
+        # os.system("sudo hciconfig hcio class 0x25C0") # Keyboard/Mouse Combo in Limited Discoverable Mode
+        os.system(
+            "sudo hciconfig hcio class 0x05C0")  # Keyboard/Mouse Combo in General Discoverable Mode
         os.system("sudo hciconfig hcio name " + BluetoothDevice.MY_DEV_NAME)
 
         # make the device discoverable
@@ -112,11 +113,13 @@ class BluetoothDevice():
 
         # retrieve a proxy for the bluez profile interface
         bus = dbus.SystemBus()
-        manager = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
+        manager = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"),
+                                 "org.bluez.ProfileManager1")
 
         profile = BluetoothBluezProfile(bus, BluetoothDevice.PROFILE_DBUS_PATH)
 
-        manager.RegisterProfile(BluetoothDevice.PROFILE_DBUS_PATH, BluetoothDevice.UUID, opts)
+        manager.RegisterProfile(BluetoothDevice.PROFILE_DBUS_PATH,
+                                BluetoothDevice.UUID, opts)
 
         print("Profile registered ")
 
@@ -131,8 +134,6 @@ class BluetoothDevice():
             sys.exit("Could not open the sdp record. Exiting...")
 
         return fh.read()
-
-
 
     # listen for incoming client connections
 
@@ -181,8 +182,10 @@ class BluetoothService(dbus.service.Object):
         print("Setting up service")
 
         # set up as a dbus service
-        bus_name = dbus.service.BusName("org.upwork.HidBluetoothService", bus=dbus.SystemBus())
-        dbus.service.Object.__init__(self, bus_name, "/org/upwork/HidBluetoothService")
+        bus_name = dbus.service.BusName("org.upwork.HidBluetoothService",
+                                        bus=dbus.SystemBus())
+        dbus.service.Object.__init__(self, bus_name,
+                                     "/org/upwork/HidBluetoothService")
 
         queue = sys.argv[1]
 
@@ -225,15 +228,19 @@ class BluetoothService(dbus.service.Object):
 
         self.device.send_string(cmd_str)
 
-    @dbus.service.method('org.freedesktop.DBus.Introspectable', out_signature='s')
+    @dbus.service.method('org.freedesktop.DBus.Introspectable',
+                         out_signature='s')
     def Introspect(self):
-        return ET.tostring(ET.parse(os.getcwd()+'/org.upwork.hidbluetooth.introspection').getroot(), encoding='utf8', method='xml')
+        return ET.tostring(ET.parse(
+            os.getcwd() + '/org.upwork.hidbluetooth.introspection').getroot(),
+                           encoding='utf8', method='xml')
 
     def close(self):
         try:
             self.device.close()
         except:
             pass
+
 
 # main routine
 if __name__ == "__main__":
@@ -244,6 +251,6 @@ if __name__ == "__main__":
     try:
         DBusGMainLoop(set_as_default=True)
         myservice = BluetoothService()
-        gtk.main()
+
     except KeyboardInterrupt:
         myservice.close()

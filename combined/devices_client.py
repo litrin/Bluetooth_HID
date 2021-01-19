@@ -13,7 +13,7 @@ import dbus.service
 import evdev  # used to get input from the keyboard
 from evdev import InputDevice, ecodes
 
-import keymap  # used to map evdev input to hide key codes
+import combined.keymap as keymap  # used to map evdev input to hide key codes
 
 
 class Device:
@@ -43,7 +43,8 @@ class Device:
         self.mouse_state = [
             0xA1,  # this is an input report
             0x02,  # Usage report = Mouse
-            0x00,  # Bit array for Buttons ( Bits 0...4 : Buttons 1...5, Bits 5...7 : Unused )
+            0x00,
+            # Bit array for Buttons ( Bits 0...4 : Buttons 1...5, Bits 5...7 : Unused )
             0x00,  # Rel X
             0x00,  # Rel Y
             0x00,  # Mouse Wheel
@@ -52,8 +53,11 @@ class Device:
         print("Setting up DBus Client")
 
         self.bus = dbus.SystemBus()
-        self.bluetoothservice = self.bus.get_object('org.upwork.HidBluetoothService', "/org/upwork/HidBluetoothService")
-        self.iface = dbus.Interface(self.bluetoothservice, 'org.upwork.HidBluetoothService')
+        self.bluetoothservice = self.bus.get_object(
+            'org.upwork.HidBluetoothService',
+            "/org/upwork/HidBluetoothService")
+        self.iface = dbus.Interface(self.bluetoothservice,
+                                    'org.upwork.HidBluetoothService')
 
         print("Waiting for Keyboard and Mouse")
 
@@ -69,11 +73,13 @@ class Device:
         while not (have_keyboard and have_mouse) and count < NUMBER_OF_TRIES:
             try:
                 # loop through all devices and try and get a keyboard and/or a mouse
-                devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
+                devices = [evdev.InputDevice(fn) for fn in
+                           evdev.list_devices()]
                 for device in reversed(devices):
                     if not have_keyboard:
                         if "keyboard" in device.name.lower():
-                            print("Found a Keyboard with the keyword 'keyboard'")
+                            print(
+                                "Found a Keyboard with the keyword 'keyboard'")
                             print("device name is " + device.name)
                             print(device.fn)
                             self.keyboard = InputDevice(device.fn)
@@ -92,7 +98,8 @@ class Device:
                             self.mouse = InputDevice(device.fn)
                             have_mouse = True
             except OSError:
-                print("Keyboard and/or Mouse not found, waiting 3 seconds and retrying")
+                print(
+                    "Keyboard and/or Mouse not found, waiting 3 seconds and retrying")
                 time.sleep(3)
             finally:
                 count += 1
@@ -139,9 +146,9 @@ class Device:
     # forward mouse events to the dbus service
     def send_mouse_input(self):
         self.iface.send_mouse(self.mouse_state[2], self.mouse_state[3:6])
-        
+
     ####################################################################################################################
-        
+
     def change_keyboard_state(self, event):
         evdev_code = ecodes.KEY[event.code]
         modkey_element = keymap.modkey(evdev_code)
@@ -180,7 +187,8 @@ class Device:
     # poll for keyboard and mouse events
     def combined_event_loop(self):
         print("Starting combined event loop")
-        devices = {dev.fd: dev for dev in [self.keyboard, self.mouse] if dev is not None}
+        devices = {dev.fd: dev for dev in [self.keyboard, self.mouse] if
+                   dev is not None}
         while True:
             r, w, e = select(devices, [], [])
             for fd in r:
@@ -202,13 +210,12 @@ class Device:
                             self.change_state_movement(event)
                         try:
                             self.send_mouse_input()
-                        except :
+                        except:
                             break
+
 
 ########################################################################################################################
 
 if __name__ == "__main__":
     print("Setting up Keyboard and Mouse")
     Device()
-
-
