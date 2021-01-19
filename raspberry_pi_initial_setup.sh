@@ -22,7 +22,7 @@ sudo pip install evdev
 
 # DBUS Configuration
 
-printf"\nConfiguring the DBus service\n\n"
+printf "\nConfiguring the DBus service\n\n"
 
 sudo cp org.upwork.hidbluetooth.conf /etc/dbus-1/system.d
 
